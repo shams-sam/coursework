@@ -1,27 +1,29 @@
-function [a, b] = bracketRegion(x0, Q, debug)
-    prev_x = x0;
-    prev_Z = 1/2*x0'*Q*x0;
-    if debug == 1
-        fprintf("%d, [%.4f, %.4f], %.4f\n", 0, prev_x, prev_Z);
-    end
+function [a, b] = bracketRegion(x0, f, d, eps, debug)
+    n=1;
+    x = {x0};
+    fx = {f(x0, 0)};
 
-    count = 0;
-    while count < 1000
-        count = count+1;
-        xi = prev_x - 2^(count-1)*0.1*Q*prev_x;
-        Zi = 1/2*xi'*Q*xi;
-        
-        if debug == 1
-            fprintf("%d, [%.4f, %.4f], %.4f\n", count, xi, Zi);
-            directedStep(xi, prev_x, count, count-1);
-        end
-           
-        if Zi > prev_Z
-            b = xi;
-            break
-        end
-        prev_x = xi;
-        prev_Z = Zi;
+    n = 2;
+    x{n} = x{n-1} + eps*d;
+    fx{n} = f(x{n}, 0);
+    
+    while fx{n} < fx{n-1}
+        n = n+1;
+        eps = 2*eps;
+        x{n} = x{n-1} + eps*d;
+        fx{n} = f(x{n}, 0);
     end
-    a = prev_x;
+    a = x{n-2};
+    b = x{n};
+    
+    if debug
+        fprintf('bracketRegion\n');
+        fprintf('%d, [%.4f, %.4f], %.4f\n', 0, x{1}, fx{1}); 
+        for i = 2:n
+           fprintf('x%d, [%.4f, %.4f], %.4f\n', i-1, x{i}, fx{i});
+           directedStep(x{i}, x{i-1}, 'b', 'ro', 0.3);
+        end
+        fprintf('bracket: [x%d, x%d]\n', n-3, n-1);
+        fprintf('interval: %.4f\n', norm(b-a));
+    end
 end
